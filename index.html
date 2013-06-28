@@ -1,0 +1,132 @@
+<html>
+  <head>
+    <title>Neoshitties | Make your own shitty website</title>
+    <script>
+      GITHUB_USERNAME = prompt('Authenticate: Enter your Github Username');
+      GITHUB_PASSWORD = prompt('Authenticate: Enter your Github Password');
+    </script>
+    <link href="style.css" type="text/css" rel="stylesheet" />
+  </head>
+  <body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
+    <script src="https://rawgithub.com/michael/github/master/lib/base64.js"></script>
+    <script src="https://rawgithub.com/michael/github/master/github.js"></script>
+    <script src="https://rawgithub.com/visionmedia/page.js/master/index.js"></script>
+    <script type="text/erb-template" class="template" id="editPageNavbar">
+      <div id="editPageNavbar" data-message="Don't remove this!!">
+        <ul>
+          <li><a href='#' class="saveLink">Save</a></li>
+        </ul>
+      </div>
+    </script>
+    <script>
+      github = new Github({
+        username: GITHUB_USERNAME,
+        password: GITHUB_PASSWORD,
+        auth: 'basic'
+      });
+
+      templates = {};
+
+      $('.template').each(function() {
+        templates[this.id] = this.innerHTML;
+      });
+
+      var currentRepo, currentFile, navbarShouldBeShowing = false;
+
+      setInterval(function() {
+        if (navbarShouldBeShowing === true && $('#editPageNavbar').length === 0) {
+          addNavbar();
+        }
+      }, 500);
+      user = github.getUser();
+      selectRepo = function(ctx, next) {
+        user.repos(function(err, repos) {
+          var list = $('<ul>');
+          repos.forEach(function(repo) {
+            var item = $('<li>');
+            $('<a href="#">'+repo.full_name+'</a>').on('click', function() {
+              showRepo(repo.full_name.split('/')[0], repo.full_name.split('/')[1]);
+              return false;
+            }).appendTo(item);
+            list.append(item)
+          });
+          $('body').html('').append(list);
+        });
+      }
+      selectRepo();
+
+      showRepo = function(username, reponame) {
+        currentRepo = github.getRepo(username, reponame);
+        currentRepo.getTree('gh-pages', function(err, tree) {
+          showTree(tree);
+          return false;
+        });
+      }
+
+      showTree = function(tree) {
+        var list = $('<ul>');
+        tree.forEach(function(file) {
+          var item = $('<li>');
+          $('<a href="#">'+file.path+'</a>').on('click', function() {
+            editFile(file);
+            return false;
+          }).appendTo(item);
+          list.append(item);
+        });
+        $('body').html('').append(list);
+      };
+
+      editFile = function(file) {
+        currentFile = file;
+        currentRepo.read('gh-pages', 'style.css', function(err, data, sha) {
+          $('<style id="siteStyle">').html(data).appendTo('head');
+        });
+        currentRepo.read('gh-pages', file.path, function(err, data, sha) {
+          var html = $(data),
+              body = html.find('body');
+          if (body.length > 0) {
+            html = body.html();
+          } else {
+            html = '<body>'+data+'</body>'
+          }
+          $('body').html(html);
+          navbarShouldBeShowing = true;
+        });
+      };
+
+      saveFile = function() {
+        html = '<html><head><link href="style.css" rel="stylesheet" type="text/css" /></head><body>'+$('body').clone().find('#editPageNavbar').remove().end().html()+'</body></html>';
+        saveStylesheet(function() {
+          currentRepo.write('gh-pages', currentFile.path, html, 'Autopush from geoshitties', function(err) { });
+        });
+      };
+
+      saveStylesheet = function(cb) {
+        css = '';
+        sheets = Array.prototype.slice.apply(document.styleSheets)
+        sheets.shift();
+        sheets.forEach(function(sheet) {
+          Array.prototype.slice.apply(sheet.cssRules).forEach(function(rule) {
+            css += rule.cssText + "\n";
+          });
+        });
+        currentRepo.write('gh-pages', 'style.css', css, 'Updating stylesheet', function(err) {
+          debugger
+          cb();
+        });
+      };
+
+      addNavbar = function() {
+        navbarShouldBeShowing = true;
+        navbar = $(templates.editPageNavbar);
+        $('body').append(navbar);
+        navbar.find('.saveLink').on('click', function() {
+          saveFile();
+          return false;
+        });
+      };
+    </script>
+  </body>
+</html>
