@@ -1,0 +1,20 @@
+body, html {
+  margin: 0;
+  height: 100%;
+}
+
+.hide {
+  display: none;
+}
+
+#navbar {
+  float: left;
+  width: 20%;
+  height: 100%;
+}
+
+#site {
+  height: 100%;
+  width: 78%;
+  float: right;
+}

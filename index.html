@@ -1,132 +1,201 @@
 <html>
   <head>
     <title>Neoshitties | Make your own shitty website</title>
-    <script>
-      GITHUB_USERNAME = prompt('Authenticate: Enter your Github Username');
-      GITHUB_PASSWORD = prompt('Authenticate: Enter your Github Password');
-    </script>
     <link href="style.css" type="text/css" rel="stylesheet" />
   </head>
   <body>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
-    <script src="https://rawgithub.com/michael/github/master/lib/base64.js"></script>
-    <script src="https://rawgithub.com/michael/github/master/github.js"></script>
-    <script src="https://rawgithub.com/visionmedia/page.js/master/index.js"></script>
-    <script type="text/erb-template" class="template" id="editPageNavbar">
-      <div id="editPageNavbar" data-message="Don't remove this!!">
-        <ul>
+    <div id="navbar">
+      <ul id="reposNavbar"></ul>
+      <ul id="treeNavbar"></ul>
+      <ul id="editFileNavbar" class="hide">
           <li><a href='#' class="saveLink">Save</a></li>
-        </ul>
-      </div>
-    </script>
-    <script>
-      github = new Github({
-        username: GITHUB_USERNAME,
-        password: GITHUB_PASSWORD,
-        auth: 'basic'
-      });
+          <li><a href='#' class="closeFile">Close File</a></li>
+      </ul>
+      <ul id="generalNavbar">
+        <li><a href='#' class="changeUserLink">Change User</a></li>
+      </ul>
+    </div>
+    <iframe id="site" data-message="HEY DUMMY THIS IS YOUR SITE!!"></iframe>
+    <div data-message="IGNORE THIS!!!">
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
+      <script src="https://rawgithub.com/michael/github/master/lib/base64.js"></script>
+      <script src="https://rawgithub.com/benastan/github/master/github.js"></script>
+      <script src="https://rawgithub.com/visionmedia/page.js/master/index.js"></script>
+      <script>
+        templates = {};
+        $('.template').each(function() {
+          templates[this.id] = this.innerHTML;
+        });
 
-      templates = {};
+        var
+          client
+        , username = "geoshitties"
+        , password = "neosh1tt1es"
+        , user
+        , frameDocument = window.frames[0].window.document
+        , $$ = function(selector) { return $(selector, frameDocument); }
+        , currentRepo
+        , currentFile
+        , navbarShouldBeShowing = false
+        , navbar = $('#navbar')
+        , reposNavbar = $('#reposNavbar')
+        , treeNavbar = $('#treeNavbar')
+        , editFileNavbar = $('#editFileNavbar')
+        , generalNavbar = $('#generalNavbar')
+        ;
 
-      $('.template').each(function() {
-        templates[this.id] = this.innerHTML;
-      });
+        function toggleNavbar(showNavbar) {
+          navbar.children().toggleClass('hide', true);
+          showNavbar.toggleClass('hide', false);
+          generalNavbar.toggleClass('hide', false);
+        };
 
-      var currentRepo, currentFile, navbarShouldBeShowing = false;
+        function fetchRepos() {
+          user.repos(function(err, repos) {
+            reposNavbar.children().remove();
+            repos.forEach(function(repo) {
+              var item = $('<li>');
+              $('<a href="#">'+repo.full_name+'</a>').on('click', function() {
+                showRepo(repo.full_name.split('/')[0], repo.full_name.split('/')[1]);
+                return false;
+              }).appendTo(item);
+              reposNavbar.append(item);
+            });
+            $('<li>').append('<a href="#" class="createRepoLink">+ New Project</a>').children().first().on('click', createRepo).end().end().appendTo(reposNavbar);
+            selectRepo();
+          });
+        };
 
-      setInterval(function() {
-        if (navbarShouldBeShowing === true && $('#editPageNavbar').length === 0) {
-          addNavbar();
+        function createRepo() {
+          var reponame = prompt('what should the repo be named?');
+          repo = client.getRepo('geoshitties', 'geoshitties');
+          repo.fork(function(err) {
+            currentRepo = client.getRepo(username, 'geoshitties');
+            currentRepo.edit({ name: reponame }, function() {
+              showRepo();
+            });
+          });
+          user.createRepo(reponame, { auto_init: true }, function(err, repo) {
+            currentRepo = client.getRepo(username, repo.name);
+            currentRepo.getRef('master', function(err, sha) {
+              currentRepo.createRef({
+                sha: sha,
+                ref: 'refs/heads/gh-pages'
+              }, function() {
+                showRepo(username, repo.name);
+              });
+            });
+          });
+        };
+
+        function selectRepo() {
+          toggleNavbar(reposNavbar);
         }
-      }, 500);
-      user = github.getUser();
-      selectRepo = function(ctx, next) {
-        user.repos(function(err, repos) {
-          var list = $('<ul>');
-          repos.forEach(function(repo) {
-            var item = $('<li>');
-            $('<a href="#">'+repo.full_name+'</a>').on('click', function() {
-              showRepo(repo.full_name.split('/')[0], repo.full_name.split('/')[1]);
-              return false;
-            }).appendTo(item);
-            list.append(item)
+
+        function signIn() {
+          client = new Github({
+            username: username,
+            password: password,
+            auth: 'basic'
           });
-          $('body').html('').append(list);
-        });
-      }
-      selectRepo();
+          user = client.getUser();
+          fetchRepos();
+        };
 
-      showRepo = function(username, reponame) {
-        currentRepo = github.getRepo(username, reponame);
-        currentRepo.getTree('gh-pages', function(err, tree) {
-          showTree(tree);
-          return false;
-        });
-      }
+        function showRepo(username, reponame) {
+          if (arguments.length === 2) currentRepo = client.getRepo(username, reponame);
+          currentRepo.getTree('gh-pages', function(err, tree) {
+            if (err) {
+            } else {
+              renderTree(tree);
+            }
+          });
+        };
 
-      showTree = function(tree) {
-        var list = $('<ul>');
-        tree.forEach(function(file) {
-          var item = $('<li>');
-          $('<a href="#">'+file.path+'</a>').on('click', function() {
-            editFile(file);
-            return false;
-          }).appendTo(item);
-          list.append(item);
-        });
-        $('body').html('').append(list);
-      };
-
-      editFile = function(file) {
-        currentFile = file;
-        currentRepo.read('gh-pages', 'style.css', function(err, data, sha) {
-          $('<style id="siteStyle">').html(data).appendTo('head');
-        });
-        currentRepo.read('gh-pages', file.path, function(err, data, sha) {
-          var html = $(data),
-              body = html.find('body');
-          if (body.length > 0) {
-            html = body.html();
+        function renderTree(tree) {
+          treeNavbar.children().remove();
+          if (tree) {
+            tree.forEach(function(file) {
+              var item = $('<li>');
+              $('<a href="#">'+file.path+'</a>').on('click', function() {
+                editFile(file);
+                return false;
+              }).appendTo(item);
+              treeNavbar.append(item);
+            });
+            $('<li><a href="#">Close project</a></li>').children(0).on('click', function() {
+              selectRepo();
+            }).end().appendTo(treeNavbar);
+            showTree();
           } else {
-            html = '<body>'+data+'</body>'
+            alert('an error occured');
           }
-          $('body').html(html);
-          navbarShouldBeShowing = true;
-        });
-      };
+        };
 
-      saveFile = function() {
-        html = '<html><head><link href="style.css" rel="stylesheet" type="text/css" /></head><body>'+$('body').clone().find('#editPageNavbar').remove().end().html()+'</body></html>';
-        saveStylesheet(function() {
-          currentRepo.write('gh-pages', currentFile.path, html, 'Autopush from geoshitties', function(err) { });
-        });
-      };
+        function showTree() {
+          toggleNavbar(treeNavbar)
+        };
 
-      saveStylesheet = function(cb) {
-        css = '';
-        sheets = Array.prototype.slice.apply(document.styleSheets)
-        sheets.shift();
-        sheets.forEach(function(sheet) {
-          Array.prototype.slice.apply(sheet.cssRules).forEach(function(rule) {
-            css += rule.cssText + "\n";
+        function editFile(file) {
+          currentFile = file;
+          var html, style;
+          currentRepo.read('gh-pages', file.path, function(err, data, sha) {
+            var re = /(?:<body>)([\w|\W]*)(?=<\/body>)/;
+            html = re.test(data) ? data.match(re)[1] : '';
+            showFile();
           });
-        });
-        currentRepo.write('gh-pages', 'style.css', css, 'Updating stylesheet', function(err) {
-          debugger
-          cb();
-        });
-      };
+          currentRepo.read('gh-pages', 'style.css', function(err, data, sha) {
+            style = $$('<style id="siteStyle">').html(data);
+            showFile();
+          });
+          function showFile() {
+            if ('string' === typeof html && 'undefined' !== typeof style) {
+              $$('head').html('').append(style);
+              $$('body').html(html);
+            }
+          }
+          toggleNavbar(editFileNavbar);
+        };
 
-      addNavbar = function() {
-        navbarShouldBeShowing = true;
-        navbar = $(templates.editPageNavbar);
-        $('body').append(navbar);
-        navbar.find('.saveLink').on('click', function() {
+        function saveFile() {
+          html = '<html><head><link href="style.css" rel="stylesheet" type="text/css" /></head><body>'+$$('body').clone().html()+'</body></html>';
+          saveStylesheet(function() {
+            currentRepo.write('gh-pages', currentFile.path, html, 'Autopush from geoshitties', function(err) { });
+          });
+        };
+
+        function saveStylesheet(cb) {
+          css = '';
+          sheets = Array.prototype.slice.apply(frameDocument.styleSheets)
+          sheets.forEach(function(sheet) {
+            Array.prototype.slice.apply(sheet.cssRules).forEach(function(rule) {
+              css += rule.cssText + "\n";
+            });
+          });
+          currentRepo.write('gh-pages', 'style.css', css, 'Updating stylesheet', cb)
+        };
+
+        $('.saveLink').on('click', function() {
           saveFile();
           return false;
         });
-      };
-    </script>
+
+        $('.closeFile').on('click', function() {
+          currentFile = false;
+          $$('body').html('');
+          $$('head').html('');
+          showTree();
+          return false;
+        });
+
+        $('.changeUserLink').on('click', function() {
+          username = prompt('username');
+          password = prompt('password');
+          signIn(username, password);
+        });
+        signIn();
+      </script>
+    </div>
   </body>
 </html>
