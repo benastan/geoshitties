@@ -4,16 +4,85 @@
     <link href="style.css" type="text/css" rel="stylesheet" />
   </head>
   <body>
-    <div id="navbar">
-      <ul id="reposNavbar"></ul>
-      <ul id="treeNavbar"></ul>
-      <ul id="editFileNavbar" class="hide">
-          <li><a href='#' class="saveLink">Save</a></li>
-          <li><a href='#' class="closeFile">Close File</a></li>
-      </ul>
-      <ul id="generalNavbar">
-        <li><a href='#' class="changeUserLink">Change User</a></li>
-      </ul>
+    <ul class="primary-navigation">
+      <li class="primary-navigation-item" id="project-navigation-item">
+        <a href="#" class="primary-navigation-item-link">Project</a>
+        <ul class="secondary-navigation">
+          <li class="secondary-navigation-item hide" id="new-project">
+            <a href="#" class="secondary-navigation-item-link" data-trigger="geoshitties:repo:new">New</a>
+          </li>
+          <li class="secondary-navigation-item">
+            <a href="#" class="secondary-navigation-item-link" data-trigger="geoshitties:repo:select">Close</a>
+          </li>
+          <hr />
+          <li class="secondary-navigation-item">
+            <a href="#" class="secondary-navigation-item-link" data-trigger="geoshitties:user:signin">Log Out</a>
+          </li>
+        </ul>
+      </li>
+      <li class="primary-navigation-item" id="file-navigation-item">
+        <a href="#" class="primary-navigation-item-link">File</a>
+        <ul class="secondary-navigation">
+          <li class="secondary-navigation-item">
+            <a href="#" id="new-file" class="secondary-navigation-item-link" data-trigger="geoshitties:file:create">New</a>
+          </li>
+          <li class="secondary-navigation-item">
+            <a href="#" id="open-file" class="secondary-navigation-item-link" data-trigger="geoshitties:file:select">Open</a>
+          </li>
+          <li class="secondary-navigation-item">
+            <a href="#" class="secondary-navigation-item-link" data-trigger="geoshitties:file:save">Save</a>
+          </li>
+        </ul>
+      </li>
+      <li class="primary-navigation-item" id="edit-navigation-item">
+        <a href="#" class="primary-navigation-item-link">Edit</a>
+      </li>
+    </ul>
+    <div class="hide" id="modals">
+      <div class="modal hide" id="sign-in-modal">
+        <form id="sign-in-form">
+          <div class="modal-header">
+            <h1 class="modal-headline">Sign In</h1>
+          </div>
+          <div class="modal-body">
+            <div>
+              <label for="username">Your Github Username</label>
+              <input type="text" name="username" id="signin_username" />
+            </div>
+            <div>
+              <label for="username">Your Github Password</label>
+              <input type="password" name="password" id="signin_password" />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button>Sign In</button>
+          </div>
+        </form>
+      </div>
+      <div class="modal hide" id="select-project-modal">
+        <form id="select-project-form">
+          <div class="modal-header">
+            <h1 class="modal-headline">Select Project</h1>
+            <p class="modal-explanation">Your project must have a gh-pages branch to use our editor.</p>
+          </div>
+          <div class="modal-body"><ul class="select-item-list"></ul></div>
+          <div class="modal-footer">
+            <button>Open</button>
+          </div>
+        </form>
+      </div>
+      <div class="modal hide" id="select-file-modal">
+        <form id="select-file-form">
+          <div class="modal-header">
+            <h1 class="modal-headline">Select HTML Page</h1>
+            <p class="modal-explanation">
+          </div>
+          <div class="modal-body"><ul class="select-item-list"></ul></div>
+          <div class="modal-footer">
+            <button>Open</button>
+          </div>
+        </form>
+      </div>
     </div>
     <iframe id="site" data-message="HEY DUMMY THIS IS YOUR SITE!!"></iframe>
     <div data-message="IGNORE THIS!!!">
@@ -22,180 +91,7 @@
       <script src="https://rawgithub.com/michael/github/master/lib/base64.js"></script>
       <script src="https://rawgithub.com/benastan/github/master/github.js"></script>
       <script src="https://rawgithub.com/visionmedia/page.js/master/index.js"></script>
-      <script>
-        templates = {};
-        $('.template').each(function() {
-          templates[this.id] = this.innerHTML;
-        });
-
-        var
-          client
-        , username = "geoshitties"
-        , password = "neosh1tt1es"
-        , user
-        , frameDocument = window.frames[0].window.document
-        , $$ = function(selector) { return $(selector, frameDocument); }
-        , currentRepo
-        , currentFile
-        , navbarShouldBeShowing = false
-        , navbar = $('#navbar')
-        , reposNavbar = $('#reposNavbar')
-        , treeNavbar = $('#treeNavbar')
-        , editFileNavbar = $('#editFileNavbar')
-        , generalNavbar = $('#generalNavbar')
-        ;
-
-        function toggleNavbar(showNavbar) {
-          navbar.children().toggleClass('hide', true);
-          showNavbar.toggleClass('hide', false);
-          generalNavbar.toggleClass('hide', false);
-        };
-
-        function fetchRepos() {
-          user.repos(function(err, repos) {
-            reposNavbar.children().remove();
-            repos.forEach(function(repo) {
-              var item = $('<li>');
-              $('<a href="#">'+repo.full_name+'</a>').on('click', function() {
-                showRepo(repo.full_name.split('/')[0], repo.full_name.split('/')[1]);
-                return false;
-              }).appendTo(item);
-              reposNavbar.append(item);
-            });
-            $('<li>').append('<a href="#" class="createRepoLink">+ New Project</a>').children().first().on('click', createRepo).end().end().appendTo(reposNavbar);
-            selectRepo();
-          });
-        };
-
-        function createRepo() {
-          var reponame = prompt('what should the repo be named?');
-          repo = client.getRepo('geoshitties', 'geoshitties');
-          repo.fork(function(err) {
-            currentRepo = client.getRepo(username, 'geoshitties');
-            currentRepo.edit({ name: reponame }, function() {
-              showRepo();
-            });
-          });
-          user.createRepo(reponame, { auto_init: true }, function(err, repo) {
-            currentRepo = client.getRepo(username, repo.name);
-            currentRepo.getRef('master', function(err, sha) {
-              currentRepo.createRef({
-                sha: sha,
-                ref: 'refs/heads/gh-pages'
-              }, function() {
-                showRepo(username, repo.name);
-              });
-            });
-          });
-        };
-
-        function selectRepo() {
-          toggleNavbar(reposNavbar);
-        }
-
-        function signIn() {
-          client = new Github({
-            username: username,
-            password: password,
-            auth: 'basic'
-          });
-          user = client.getUser();
-          fetchRepos();
-        };
-
-        function showRepo(username, reponame) {
-          if (arguments.length === 2) currentRepo = client.getRepo(username, reponame);
-          currentRepo.getTree('gh-pages', function(err, tree) {
-            if (err) {
-            } else {
-              renderTree(tree);
-            }
-          });
-        };
-
-        function renderTree(tree) {
-          treeNavbar.children().remove();
-          if (tree) {
-            tree.forEach(function(file) {
-              var item = $('<li>');
-              $('<a href="#">'+file.path+'</a>').on('click', function() {
-                editFile(file);
-                return false;
-              }).appendTo(item);
-              treeNavbar.append(item);
-            });
-            $('<li><a href="#">Close project</a></li>').children(0).on('click', function() {
-              selectRepo();
-            }).end().appendTo(treeNavbar);
-            showTree();
-          } else {
-            alert('an error occured');
-          }
-        };
-
-        function showTree() {
-          toggleNavbar(treeNavbar)
-        };
-
-        function editFile(file) {
-          currentFile = file;
-          var html, style;
-          currentRepo.read('gh-pages', file.path, function(err, data, sha) {
-            var re = /(?:<body>)([\w|\W]*)(?=<\/body>)/;
-            html = re.test(data) ? data.match(re)[1] : '';
-            showFile();
-          });
-          currentRepo.read('gh-pages', 'style.css', function(err, data, sha) {
-            style = $$('<style id="siteStyle">').html(data);
-            showFile();
-          });
-          function showFile() {
-            if ('string' === typeof html && 'undefined' !== typeof style) {
-              $$('head').html('').append(style);
-              $$('body').html(html);
-            }
-          }
-          toggleNavbar(editFileNavbar);
-        };
-
-        function saveFile() {
-          html = '<html><head><link href="style.css" rel="stylesheet" type="text/css" /></head><body>'+$$('body').clone().html()+'</body></html>';
-          saveStylesheet(function() {
-            currentRepo.write('gh-pages', currentFile.path, html, 'Autopush from geoshitties', function(err) { });
-          });
-        };
-
-        function saveStylesheet(cb) {
-          css = '';
-          sheets = Array.prototype.slice.apply(frameDocument.styleSheets)
-          sheets.forEach(function(sheet) {
-            Array.prototype.slice.apply(sheet.cssRules).forEach(function(rule) {
-              css += rule.cssText + "\n";
-            });
-          });
-          currentRepo.write('gh-pages', 'style.css', css, 'Updating stylesheet', cb)
-        };
-
-        $('.saveLink').on('click', function() {
-          saveFile();
-          return false;
-        });
-
-        $('.closeFile').on('click', function() {
-          currentFile = false;
-          $$('body').html('');
-          $$('head').html('');
-          showTree();
-          return false;
-        });
-
-        $('.changeUserLink').on('click', function() {
-          username = prompt('username');
-          password = prompt('password');
-          signIn(username, password);
-        });
-        signIn();
-      </script>
+      <script src="geoshitties.js" type="text/javascript"></script>
     </div>
   </body>
 </html>

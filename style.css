@@ -1,20 +1,151 @@
 body, html {
   margin: 0;
   height: 100%;
+  font-family: Helvetica Neue, sans-serif;
+  font-size: 14px;
 }
 
 .hide {
   display: none;
 }
 
-#navbar {
+.primary-navigation {
+  width: 100%;
+  height: 1.75em;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background: #eee;
+}
+
+.primary-navigation a {
+  color: #666;
+  text-decoration: none;
+}
+
+.primary-navigation > ul + ul {
+  display: none;
+}
+
+.primary-navigation-item {
+  position: relative;
   float: left;
-  width: 20%;
+}
+
+.primary-navigation-item-link {
+  line-height: 1.75em;
+  padding: 0 10px;
+}
+
+.primary-navigation-item > a + ul {
+  position: absolute;
+  top: 99.5%;
+  left: -9999px;
+}
+
+.primary-navigation-item:hover {
+  background: #436EC9;
+}
+
+.primary-navigation-item:hover > .primary-navigation-item-link {
+  color: white;
+}
+
+.primary-navigation-item:hover > .secondary-navigation {
+  left: -1px;
+}
+
+.secondary-navigation {
+  list-style: none;
+  padding: 0;
+  border: 1px solid #D8D8D8;
+  box-shadow: 0px 1px 4px -2px #777;
+  background: #fcfcfc;
+  min-width: 200px;
+}
+
+.secondary-navigation > hr {
+  margin: .5em 0.25em;
+  border-color: #efefef;
+  border-width: 2px 0 0 0;
+  border-style: solid;
+}
+
+.secondary-navigation-item {
+  margin: .25em 0;
+}
+
+.secondary-navigation-item-link {
+  padding: .25em 10px;
+  display: block;
+}
+
+.secondary-navigation-item-link:hover {
+  background: #436EC9;
+  color: white;
+}
+
+#modals {
+  width: 100%;
   height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: rgba(255, 255, 255, .6);
+}
+
+.modal {
+  width: 600px;
+  min-height: 300px;
+  margin: 5% auto;
+  border: 1px solid #D8D8D8;
+  box-shadow: 0px 1px 4px -2px #777;
+  background: #fcfcfc;
+}
+
+#select-project-modal .modal-body {
+  max-height: 60%;
+  overflow-y: auto;
+}
+
+.select-item-list {
+  list-style: none;
+  padding: 0;
+}
+
+.select-item-input {
+  display: none;
+}
+
+
+.select-item-label {
+  display: block;
+  padding: .6em;
+  margin: .25em .2em;
+  color: #333;
+  border-radius: 3px;
+  border: 1px solid #D6D8DD;
+  background: #EBEDF3;
+  cursor: pointer;
+}
+
+.select-item-label:hover {
+  background: #EBEDF3;
+  border: 1px solid #B6B6B6;
+  background: #394568;
+  color: white;
+}
+
+.select-item-input:checked + .select-item-label {
+  background: #EBEDF3;
+  border: 1px solid #B6B6B6;
+  background: #394568;
+  color: white;
 }
 
 #site {
   height: 100%;
-  width: 78%;
-  float: right;
+  width: 100%;
+  border: none;
 }
+
