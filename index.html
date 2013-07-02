@@ -9,10 +9,10 @@
         <a href="#" class="primary-navigation-item-link">Project</a>
         <ul class="secondary-navigation">
           <li class="secondary-navigation-item hide" id="new-project">
-            <a href="#" class="secondary-navigation-item-link" data-trigger="geoshitties:repo:new">New</a>
+            <a href="#" class="secondary-navigation-item-link" data-trigger="geoshitties:repo:new">New Project</a>
           </li>
           <li class="secondary-navigation-item">
-            <a href="#" class="secondary-navigation-item-link" data-trigger="geoshitties:repo:select">Close</a>
+            <a href="#" class="secondary-navigation-item-link" data-trigger="geoshitties:repo:select">Close Project</a>
           </li>
           <hr />
           <li class="secondary-navigation-item">
@@ -75,11 +75,26 @@
         <form id="select-file-form">
           <div class="modal-header">
             <h1 class="modal-headline">Select HTML Page</h1>
-            <p class="modal-explanation">
+            <p class="modal-explanation">Select a file to edit, using your browser's developer tools.</p>
           </div>
           <div class="modal-body"><ul class="select-item-list"></ul></div>
           <div class="modal-footer">
             <button>Open</button>
+          </div>
+        </form>
+      </div>
+      <div class="modal hide" id="new-project-modal">
+        <form id="new-project-form">
+          <div class="modal-header">
+            <h1 class="modal-headline">New Project</h1>
+            <p class="modal-explanation">This is the name of the Github repository that will house your new project.</p>
+          </div>
+          <div class="modal-body">
+            <label for="projectname">Project Name</label>
+            <input type="text" id="projectname" name="projectname" />
+          </div>
+          <div class="modal-footer">
+            <button>Create Project</button>
           </div>
         </form>
       </div>

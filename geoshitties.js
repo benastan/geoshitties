@@ -1,8 +1,4 @@
 Geoshitties = {};
-Geoshitties.templates = {};
-$('.template').each(function() {
-  templates[this.id] = this.innerHTML;
-});
 
 $('a').on('click', function() {
   var trigger = this.getAttribute('data-trigger');
@@ -12,24 +8,12 @@ $('a').on('click', function() {
 });
 
 var
-  client
-, frameDocument = window.frames[0].window.document
+  frameDocument = window.frames[0].window.document
 , $$ = function(selector) { return $(selector, frameDocument); }
 , currentRepo
 , currentFile
-, navbarShouldBeShowing = false
-, navbar = $('#navbar')
 , selectProjectModal = $('#select-project-modal')
-, treeNavbar = $('#treeNavbar')
-, editFileNavbar = $('#editFileNavbar')
-, generalNavbar = $('#generalNavbar')
 ;
-
-function toggleNavbar(showNavbar) {
-  navbar.children().toggleClass('hide', true);
-  showNavbar.toggleClass('hide', false);
-  generalNavbar.toggleClass('hide', false);
-};
 
 function createRepo() {
   var reponame = prompt('what should the repo be named?');
@@ -47,12 +31,40 @@ function createRepo() {
   });
 }
 
+$(document).on('geoshitties:repo:new', function() {
+  $('#site').toggleClass('hide', true);
+  showModal('new-project-modal');
+});
+
+$('#new-project-form').on('submit', function() {
+  $(document).triggerHandler('geoshitties:repo:create', this.projectname.value);
+  return false;
+});
+
+$(document).on('geoshitties:repo:create', function(e, reponame) {
+  Geoshitties.user.createRepo(reponame, { auto_init: true }, function(err, repo) {
+    currentRepo = Geoshitties.client.getRepo(Geoshitties.username, reponame);
+    currentRepo.getSha('master', '', function(err, sha) {
+      var ref = {
+        ref: 'refs/heads/gh-pages',
+        sha: sha
+      };
+      currentRepo.createRef(ref, function(err, rsp) {
+        currentRepo.write('gh-pages', 'index.html', '<h1>Hello world!</h1>', 'Initial project commit!!', function() {
+          $(document).triggerHandler('geoshitties:repo:set');
+        });
+      });
+    });
+  });
+});
+
 $(document).on('geoshitties:repo:select', function() { showModal('select-project-modal'); });
 
 $.fn.renderItems = function(options) {
   this.each(function() {
     var $this = $(this);
     if (!options.name) options.name = '';
+    if (options.append !== true) $this.children().remove();
     options.items.forEach(function(item) {
       var data = options.format(item), html;
       html = '<li> \
@@ -127,7 +139,7 @@ $(document).on('geoshitties:file:set', function(e, filepath) {
   var html, style;
   currentRepo.read('gh-pages', filepath, function(err, data, sha) {
     var re = /(?:<body>)([\w|\W]*)(?=<\/body>)/;
-    html = re.test(data) ? data.match(re)[1] : '';
+    html = re.test(data) ? data.match(re)[1] : data;
     showFile();
   });
   currentRepo.read('gh-pages', 'style.css', function(err, data, sha) {
@@ -153,7 +165,7 @@ $(document).on('geoshitties:file:save', function(e) {
     currentRepo.write('gh-pages', currentFile, html, 'Autopush from geoshitties', function(err) { });
     $(document).off('geoshitties:stylesheet:saved');
   });
-  $(document).triggerHandler('geoshitties:stylesheet:saved');
+  $(document).triggerHandler('geoshitties:stylesheet:save');
 });
 
 $(document).on('geoshitties:stylesheet:save', function() {
@@ -163,8 +175,9 @@ $(document).on('geoshitties:stylesheet:save', function() {
       css += rule.cssText + "\n";
     });
   });
-  currentRepo.write('gh-pages', 'style.css', css, 'Updating stylesheet', cb);
-  $(document).triggerHandler('geoshitties:stylesheet:saved');
+  currentRepo.write('gh-pages', 'style.css', css, 'Updating stylesheet', function( ){
+    $(document).triggerHandler('geoshitties:stylesheet:saved');
+  });
 });
 
 $('.closeFile').on('click', function() {
